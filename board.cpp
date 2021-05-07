@@ -23,44 +23,33 @@ class Board {
 
   }
 
-  U64 get_occupancy(U64 location, PieceType piece){
-  	// function takes in piece location in bitboard format and returns all possible moves across board
-  	U64 mask;
-  	switch(piece){
-  		case NONE:
-  			break;
-  		case Pawn:
-  			break; 
-  		case Rook:
-  			mask = 0; 
+  U64 get_rook_occupancy(U64 location, PieceType piece){
+  		mask = 0; 
   			//vertical above piece
-  			for (int i = location+8; i<= 63-8; i+=8){
-  				mask |= (((U64)1)<<i);
-  			}
-  			//vertical below piece
-  			for (int i = location-8; i>= 8; i-=8){
-  				mask |= (((U64)1)<<i);
-  			}
-  			//horizontal to the right
-  			for (int i = location + 1; i%8<=7 && i%8!=0; i++){
-  				mask |= (((U64)1)<<i)
-  			}
-  			//horizontal to the left
-  			for (int i = location - 1; i%8<=7 && i&8!=0; i--){
-  				mask |= (((U64)1)<<i)
-  			}
-  			break
-  		case Knight:
-  			break;
-  		case Bishop:
-  			break; 
-  		case Queen:
-  			break;
-  		case KingL
-  			break;
-  	}
-  	return mask;
+  		for (int i = location+8; i<= 63-8; i+=8){
+  			mask |= (((U64)1)<<i);
+  		}
+		//vertical below piece
+		for (int i = location-8; i>= 8; i-=8){
+			mask |= (((U64)1)<<i);
+		}
+		//horizontal to the right
+		for (int i = location + 1; i%8<=7 && i%8!=0; i++){
+			mask |= (((U64)1)<<i)
+		}
+		//horizontal to the left
+		for (int i = location - 1; i%8<=7 && i&8!=0; i--){
+			mask |= (((U64)1)<<i)
+		}
+		return mask 
   }
 
+  U64 get_bishop_occupancy(U64 location, PieceType piece){
+  	return 0 
+  }
+
+  U64 get_queen_occupancy(U64 location, PieceType piece){
+  	return get_rook_occupancy(location, piece) | get_bishop_occupancy(location, piece)
+  }
 
 };
