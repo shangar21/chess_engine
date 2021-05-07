@@ -11,8 +11,8 @@ struct Move {
 
 class Board {
  public:
-  PieceType whitePieces[64] = { NONE };
-  PieceType blackPieces[64] = { NONE };
+  PieceType whitePieces[64] = { NONE }; // U64 whitePieces = 0;
+  PieceType blackPieces[64] = { NONE }; // U64 whitePieces = 0;
   U64 whitePiecesIndexes;
   U64 blackPiecesIndexes;
   U64 bitboard;
