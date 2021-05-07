@@ -14,4 +14,6 @@ typedef int16_t I16;
 typedef int32_t I32;
 typedef int64_t I64;
 
+#define U64_clz(X) __builtin_clzll(X)
+
 #endif
