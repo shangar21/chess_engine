@@ -20,8 +20,8 @@ class Board {
   U64 bitboard;
 
   Board() {
-    whitePiecesIndexes = 18446462598732840960U;
-    blackPiecesIndexes = 65535U;
+    whitePiecesIndexes = 0xFFFF000000000000U;
+    blackPiecesIndexes = 0x000000000000FFFFU;
   }
 
   U64 get_rook_occupancy(U64 location, PieceType piece) {
