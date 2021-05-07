@@ -3,7 +3,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-#include <utility>
+#include <cstdint>
 
 typedef uint8_t U8;
 typedef uint16_t U16;
