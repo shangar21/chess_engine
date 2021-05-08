@@ -91,11 +91,11 @@ int main() {
   Board b = Board();
   U64 idx;
   for (idx = 1; idx; idx <<= 1) {
-    U64 bishop_mask = b.get_bishop_occupancy(idx);
-    b.print_mask(bishop_mask);
-    printf(
-        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    // std::cout << rook_occupancy << ',' << std::endl;
+    U64 bishop_mask = b.get_queen_occupancy(idx);
+    // b.print_mask(bishop_mask);
+    // printf(
+    //     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    //     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    std::cout << bishop_mask << ',' << std::endl;
   }
 }
