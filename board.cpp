@@ -61,33 +61,24 @@ class Board {
 
   U64 get_bishop_occupancy(U64 location) {
   	U64 mask = 0;
-  	
-  	for (U64 i = location >> 7; i && U64_clz(i) % 8 != 7; i>>=7){
-  		mask |= i;
-  		printf("%s\n", "up right");
-  		print_mask(i);
-  	}
-  	for (U64 i = location >> 9; i && U64_clz(i) % 8 != 7; i>>=9){
-  		mask |= i;
-  		printf("%s\n", "up left");
-  		print_mask(i);
-  	}
+   
+    for (U64 i = location >> 7; i && U64_clz(i) % 8 != 7 && U64_clz(i) % 8; i >>= 7) {
+      mask |= i;
+    }
  
-  	for (U64 i = location << 9; i && U64_clz(i) % 8 != 7; i<<=9){
-  		mask |= i;
-  		printf("%s\n", "down right");
-  		print_mask(i);
-  	} 	
-	
-	//down left = moving 7 bits to the right
-  	for (U64 i = location << 7; i && U64_clz(i) % 8 != 7; i <<= 7){
-  		mask |= i;
-  		printf("%s\n", "down left");
-  		print_mask(i);
-  	}
+    for (U64 i = location << 7; i && U64_clz(i) % 8 != 7 && U64_clz(i) % 8; i <<= 7) {
+      mask |= i;
+    }
+  
+    for (U64 i = location >> 9; i && U64_clz(i) % 8 != 7 && U64_clz(i) % 8; i >>= 9) {
+      mask |= i;
+    }
 
+    for (U64 i = location << 9; i && U64_clz(i) % 8 != 7 && U64_clz(i) % 8; i <<= 9) {
+      mask |= i;
+    }
+    return mask;
 
-  	return mask;
   }
 
   U64 get_queen_occupancy(U64 location) {
@@ -102,8 +93,7 @@ int main() {
   for (idx = 1; idx; idx <<= 1) {
     U64 bishop_mask = b.get_bishop_occupancy(idx);
     b.print_mask(bishop_mask);
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    break;
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     //std::cout << rook_occupancy << ',' << std::endl;
   }
 }
