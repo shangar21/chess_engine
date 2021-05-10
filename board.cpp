@@ -85,17 +85,36 @@ class Board {
   U64 get_queen_occupancy(U64 location) {
     return get_rook_occupancy(location) | get_bishop_occupancy(location);
   }
+
+  int get_row(U64 bit) { return U64_clz(bit) / 8; }
+
+  U64 get_knight_occupancy(U64 location) {
+    U64 mask = 0;
+    int knight_row = get_row(location);
+    for (int dRow : {-2, -1, 1, 2}) {
+      for (int dCol : {-2, -1, 1, 2}) {
+        if (abs(abs(dRow) - abs(dCol)) == 1) {
+          int shifts = 8 * dRow + dCol;
+          U64 i = (shifts < 0) ? location >> abs(shifts) : location << shifts;
+          if (i && abs(knight_row - get_row(i)) == abs(dRow)) {
+            mask |= i;
+          }
+        }
+      }
+    }
+    return mask;
+  }
 };
 
 int main() {
   Board b = Board();
   U64 idx;
   for (idx = 1; idx; idx <<= 1) {
-    U64 bishop_mask = b.get_queen_occupancy(idx);
-    // b.print_mask(bishop_mask);
+    U64 knight_mask = b.get_knight_occupancy(idx);
+    // b.print_mask(knight_mask);
     // printf(
     //     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     //     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    std::cout << bishop_mask << ',' << std::endl;
+    printf("%#018lx,\n", knight_mask);
   }
 }
