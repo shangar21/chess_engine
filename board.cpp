@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "types.h"
+#include "precomputedMasks.h"
 
 enum PieceType { NONE, Pawn, Rook, Knight, Bishop, Queen, King };
 
@@ -20,6 +21,14 @@ class Board {
   U64 whitePiecesIndexes;
   U64 blackPiecesIndexes;
   U64 bitboard;
+
+  U64 whiteRookLocations[2];
+  U64 whiteBishopLocations[2];
+  U64 whiteQueenLocation;
+
+  U64 blackRookLocations[2];
+  U64 blackBishopLocations[2];
+  U64 blackQueenLocation;
 
   Board() {
     whitePiecesIndexes = 0xFFFF000000000000U;
@@ -104,13 +113,46 @@ class Board {
     }
     return mask;
   }
+
+	// location of square you want to check, and color of attacking piece
+	U64 *rook_attack(U64 location, bool white){
+		int index = (int)(log2(location));
+		U64 allPieces = whitePiecesIndexes | blackPiecesIndexes;
+		U64 rook_attack[2] = {white ? (rookMasks[index] & whiteRookLocations[0]) : (rookMasks[index] & blackRookLocations[0]) , white ? (rookMasks[index] & whiteRookLocations[1]) : (rookMasks[index] & blackRookLocations[1])};
+		
+		for (int j = 0; j < 2; j++){
+			U64 rook = rook_attack[j];
+			if (get_row(rook) == get_row(location)){
+				for (U64 i = (rook < location) ? (rook >> 1) : (rook << 1); (i && U64_clz(i) % 8) && (i && U64_clz(i) % 8 != 7) && (i != location); i = (rook < location) ? (i >> 1) : (i << 1)){
+					if (i & allPieces){
+						rook_attack[i] = 0;
+						break; 
+					}
+				}
+			}
+			else{
+
+				for (U64 i = rook < location ? rook >> 8 : rook << 8; i && (i != location); rook < location ? i >> 8 : i << 8){
+					if (i & opponents){
+						rook_attack[i] = 0;
+						break; 
+					}
+				}
+			}
+
+		}
+
+		return rook_attack; 
+	}
+
 };
+
 
 int main() {
   Board b = Board();
   U64 idx;
   for (idx = 1; idx; idx <<= 1) {
-    U64 knight_mask = b.get_knight_occupancy(idx);
+    U64 knight_mask = b.get_queen_occupancy(idx);
     // b.print_mask(knight_mask);
     // printf(
     //     "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
