@@ -1,5 +1,3 @@
-
-
 #ifndef TYPES_H
 #define TYPES_H
 
@@ -15,5 +13,6 @@ typedef int32_t I32;
 typedef int64_t I64;
 
 #define U64_clz(X) __builtin_clzll(X)
+#define row(location) (63 - U64_clz(location)) / 8
 
 #endif
