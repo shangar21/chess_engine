@@ -14,5 +14,7 @@ typedef int64_t I64;
 
 #define U64_clz(X) __builtin_clzll(X)
 #define row(location) (63 - U64_clz(location)) / 8
+#define col(location) (63 - U64_clz(location)) % 8
+#define LSBIT(x) ((x) & -(x))
 
 #endif
