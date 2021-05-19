@@ -3,10 +3,11 @@
 #include <stdlib.h>
 
 #include <iostream>
+#include <string>
 
 #include "precomputedMasks.h"
-#include "types.h"
 #include "testing.h"
+#include "types.h"
 
 enum PieceType { NONE, Pawn, Rook, Knight, Bishop, Queen, King };
 
@@ -23,8 +24,6 @@ struct Pieces {
   U64 king;
 };
 
-
-
 class Board {
  public:
   Pieces whitePieces;
@@ -40,6 +39,44 @@ class Board {
                    0x0000000000000008U, 0x0000000000000010U};
   }
 
+  operator std::string() {
+    std::string res;
+    U64 idx = 1;
+    for (int row = 0; row < 8; ++row) {
+      for (int col = 0; col < 8; ++col) {
+        if (idx & whitePieces.pawns)
+          res += u8"♙";
+        else if (idx & whitePieces.rooks)
+          res += u8"♖";
+        else if (idx & whitePieces.knights)
+          res += u8"♘";
+        else if (idx & whitePieces.bishops)
+          res += u8"♗";
+        else if (idx & whitePieces.queens)
+          res += u8"♕";
+        else if (idx & whitePieces.king)
+          res += u8"♔";
+        else if (idx & blackPieces.pawns)
+          res += u8"♟︎";
+        else if (idx & blackPieces.rooks)
+          res += u8"♜";
+        else if (idx & blackPieces.knights)
+          res += u8"♞";
+        else if (idx & blackPieces.bishops)
+          res += u8"♝";
+        else if (idx & blackPieces.queens)
+          res += u8"♛";
+        else if (idx & blackPieces.king)
+          res += u8"♚";
+        else
+          res += u8"_";
+        idx <<= 1;
+      }
+      res += u8"\n";
+    }
+    return res;
+  };
+
   U64 getAllPieces(bool white) {
     return (white)
                ? (whitePieces.pawns | whitePieces.rooks | whitePieces.knights |
@@ -47,76 +84,72 @@ class Board {
                : (blackPieces.pawns | blackPieces.rooks | blackPieces.knights |
                   blackPieces.bishops | blackPieces.queens | blackPieces.king);
   }
-  
 
-  // location of square you want to check, and color of attacking piece
-  U64 attackPieces(U64 location, bool white){
-  	Pieces opponents = white ? blackPieces : whitePieces;
-  	U64 RookAttacks =  0;
-  	U64 BishopAttacks = 0;
-    U64 allPieces = getAllPieces(white) | getAllPieces(!white);
-    U64 temp = 0;
-          
-    temp = (opponents.rooks | opponents.queens) & rookMasks[index(location)];
+  // location of square you want to check, color of that piece
+  bool isPieceAttacked(U64 location, bool white) {
+    const Pieces &opponents = white ? blackPieces : whitePieces;
+    U64 allPieces, temp;
 
-    
+    allPieces = getAllPieces(false) | getAllPieces(true);
 
-  	while (temp){
-  		U64 piece = LSBIT(temp);
+    int locIdx, locRow, locCol, pieceIdx, pieceRow, pieceCol;
 
+    locIdx = index(location);
+    locRow = locIdx / 8;
+    locCol = locIdx % 8;
 
-  		if (row(piece) == row(location)){
+    if (knightMasks[locIdx] & opponents.knights) return true;
 
-            U64 horizontalPiecesL = (seekL[index(location)]&seekR[index(piece)])^(piece|location);
-            U64 horizontalPiecesR = (seekR[index(location)]&seekL[index(piece)])^(piece|location);                       
-            U64 horizontalPieces = (horizontalPiecesL | horizontalPiecesR) & (allPieces^piece);
-            
-            if (!horizontalPieces)
-                RookAttacks |= piece;                
-        }
-  		else
-        {
-            U64 verticalPiecesU = (seekU[index(location)]&seekD[index(piece)])^(piece|location);
-            U64 verticalPiecesD = (seekD[index(location)]&seekU[index(piece)])^(piece|location);
-            U64 verticalPieces = (verticalPiecesU | verticalPiecesD) & (allPieces^piece);
-              
-            if (!verticalPieces)
-                RookAttacks |= piece;            
-        }        
-        temp ^= piece;
+    temp = (opponents.rooks | opponents.queens) & rookMasks[locIdx];
+    U64 piece, inBetween;
 
+    while (temp) {
+      piece = LSBIT(temp);
+      pieceIdx = index(piece);
+      pieceRow = pieceIdx / 8;
+      pieceCol = pieceIdx % 8;
+
+      if (pieceRow == locRow) {
+        inBetween = (pieceCol < locCol)
+                        ? seekR[pieceIdx] & seekL[locIdx] & allPieces
+                        : seekR[locIdx] & seekL[pieceIdx] & allPieces;
+        if (!inBetween) return true;
+      } else if (pieceCol == locCol) {
+        inBetween = (pieceRow < locRow)
+                        ? seekD[pieceIdx] & seekU[locIdx] & allPieces
+                        : seekD[locIdx] & seekU[pieceIdx] & allPieces;
+        if (!inBetween) return true;
+      }
+      temp ^= piece;
     }
 
-    temp = (opponents.bishops | opponents.queens) & bishopMasks[index(location)];
+    temp = (opponents.bishops | opponents.queens) & bishopMasks[locIdx];
 
-    while (temp){
-    	U64 piece = LSBIT(temp);
+    while (temp) {
+      piece = LSBIT(temp);
+      pieceIdx = index(piece);
+      pieceRow = pieceIdx / 8;
+      pieceCol = pieceIdx % 8;
 
-    	U64 URpieces = (seekUR[index(location)]&seekDL[index(piece)])^(piece|location);
-    	U64 DRpieces = (seekDR[index(location)]&seekUL[index(piece)])^(piece|location);
-    	U64 ULpieces = (seekUL[index(location)]&seekDR[index(piece)])^(piece|location);
-    	U64 DLpieces = (seekDL[index(location)]&seekUR[index(piece)])^(piece|location);
-
-    	U64 inbetween = (URpieces | DRpieces | ULpieces | DLpieces) & (allPieces^piece);
-
-    	if (!inbetween){
-    		BishopAttacks |= piece;
-    	}
-
-    	temp ^= piece; 
+      if (locRow - pieceRow == locCol - pieceCol) {
+        inBetween = (pieceRow < locRow)
+                        ? seekDR[pieceIdx] & seekUL[locIdx] & allPieces
+                        : seekDR[locIdx] & seekUL[pieceIdx] & allPieces;
+        if (!inBetween) return true;
+      } else if (locRow - pieceRow == pieceCol - locCol) {
+        inBetween = (pieceRow < locRow)
+                        ? seekDL[pieceIdx] & seekUR[locIdx] & allPieces
+                        : seekDL[locIdx] & seekUR[pieceIdx] & allPieces;
+        if (!inBetween) return true;
+      }
+      temp ^= piece;
     }
-
-    return RookAttacks | BishopAttacks; //| BishopAttacks | QueenAttacks
+    return false;
   }
 };
 
-int main(){
+int main() {
   Board board;
-  board.whitePieces.rooks = (U64)(pow(2,30)) | (U64)(pow(2,29)) | (U64)(pow(2,39)) | (U64)(pow(2,47));
-  board.whitePieces.bishops = (U64)(pow(2,22)) | (U64)(pow(2,13)) | (U64)(pow(2,38)) | (U64)(pow(2,45));
-  board.whitePieces.queens = (U64)(pow(2,7));
-  //board.attackPieces(pow(2,31), false);
-  printMask(board.whitePieces.rooks | board.whitePieces.bishops | board.whitePieces.queens);
-  printMask(pow(2,31));
-  printMask(board.attackPieces(pow(2,31), false)| (U64)pow(2,31));
-} 
+  std::cout << std::string(board) << std::endl;
+  return 0;
+}
