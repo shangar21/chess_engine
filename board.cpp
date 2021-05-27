@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 #include "precomputedMasks.h"
 #include "testing.h"
@@ -12,7 +13,7 @@
 enum PieceType { NONE, Pawn, Rook, Knight, Bishop, Queen, King };
 
 struct Move {
-  char prev, next;
+  U8 prev, next;
 };
 
 struct Pieces {
@@ -22,6 +23,7 @@ struct Pieces {
   U64 bishops;
   U64 queens;
   U64 king;
+  U8 pinType[64];
 };
 
 class Board {
@@ -37,6 +39,8 @@ class Board {
     blackPieces = {0x000000000000FF00U, 0x0000000000000081U,
                    0x0000000000000042U, 0x0000000000000024U,
                    0x0000000000000008U, 0x0000000000000010U};
+    std::fill(std::begin(whitePieces.pinType), std::end(whitePieces.pinType), 0);
+    std::fill(std::begin(blackPieces.pinType), std::end(blackPieces.pinType), 0);
   }
 
   operator std::string() {
@@ -87,7 +91,7 @@ class Board {
   }
 
   // location of square you want to check, color of that piece
-  bool isPieceAttacked(U64 location, bool white) {
+  bool isPieceAttacked(const U64 &location, const bool white) {
     const Pieces &opponents = white ? blackPieces : whitePieces;
     U64 allPieces, temp;
 
@@ -146,6 +150,10 @@ class Board {
       temp ^= piece;
     }
     return false;
+  }
+
+  void calculatePins(bool white) {
+    return;
   }
 };
 
