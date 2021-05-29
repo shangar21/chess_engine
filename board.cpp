@@ -152,8 +152,13 @@ class Board {
     return false;
   }
 
+  U64 queen_pins(bool white){
+    Pieces opponents = white ? blackPieces : whitePieces;
+    U64 queen_attacks
+  }
+
   void calculatePins(bool white) {
-    return;
+     
   }
 };
 
