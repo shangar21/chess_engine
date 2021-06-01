@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
-#include <algorithm>
 
 #include "precomputedMasks.h"
 #include "testing.h"
@@ -39,8 +39,10 @@ class Board {
     blackPieces = {0x000000000000FF00U, 0x0000000000000081U,
                    0x0000000000000042U, 0x0000000000000024U,
                    0x0000000000000008U, 0x0000000000000010U};
-    std::fill(std::begin(whitePieces.pinType), std::end(whitePieces.pinType), 0);
-    std::fill(std::begin(blackPieces.pinType), std::end(blackPieces.pinType), 0);
+    std::fill(std::begin(whitePieces.pinType), std::end(whitePieces.pinType),
+              0);
+    std::fill(std::begin(blackPieces.pinType), std::end(blackPieces.pinType),
+              0);
   }
 
   operator std::string() {
@@ -136,15 +138,15 @@ class Board {
       pieceRow = pieceIdx / 8;
       pieceCol = pieceIdx % 8;
 
-      if (locRow - pieceRow == locCol - pieceCol) {
-        inBetween = (pieceRow < locRow)
-                        ? seekDR[pieceIdx] & seekUL[locIdx] & allPieces
-                        : seekDR[locIdx] & seekUL[pieceIdx] & allPieces;
-        if (!inBetween) return true;
-      } else if (locRow - pieceRow == pieceCol - locCol) {
+      if (locRow - pieceRow == pieceCol - locCol) {
         inBetween = (pieceRow < locRow)
                         ? seekDL[pieceIdx] & seekUR[locIdx] & allPieces
                         : seekDL[locIdx] & seekUR[pieceIdx] & allPieces;
+        if (!inBetween) return true;
+      } else if (locRow - pieceRow == locCol - pieceCol) {
+        inBetween = (pieceRow < locRow)
+                        ? seekDR[pieceIdx] & seekUL[locIdx] & allPieces
+                        : seekDR[locIdx] & seekUL[pieceIdx] & allPieces;
         if (!inBetween) return true;
       }
       temp ^= piece;
@@ -152,13 +154,70 @@ class Board {
     return false;
   }
 
-  U64 queen_pins(bool white){
-    Pieces opponents = white ? blackPieces : whitePieces;
-    U64 queen_attacks
-  }
-
+  /*
+   * If white calculate which of white's pieces are pinned.
+   * Otherwise calculate which of black's pieces are pinned.
+   */
   void calculatePins(bool white) {
-     
+    Pieces &mine = (white) ? whitePieces : blackPieces;
+    Pieces &opponents = (white) ? blackPieces : whitePieces;
+    const U64 allMyPieces = getAllPieces(white);
+    const U64 allPieces = allMyPieces | getAllPieces(!white);
+
+    int kingIdx, kingRow, kingCol, pieceIdx, pieceRow, pieceCol;
+
+    kingIdx = index(mine.king);
+    kingRow = kingIdx / 8;
+    kingCol = kingIdx % 8;
+
+    U64 temp, piece, inBetween;
+    temp = (opponents.rooks | opponents.queens) & rookMasks[kingIdx];
+
+    while (temp) {
+      piece = LSBIT(temp);
+      pieceIdx = index(piece);
+      pieceRow = pieceIdx / 8;
+      pieceCol = pieceIdx % 8;
+
+      if (pieceRow == kingRow) {
+        inBetween = (pieceCol < kingCol)
+                        ? seekR[pieceIdx] & seekL[kingIdx] & allPieces
+                        : seekR[kingIdx] & seekL[pieceIdx] & allPieces;
+        if (isSingleBit(inBetween) && inBetween & allMyPieces)
+          mine.pinType[index(inBetween)] = 1;
+      } else if (pieceCol == kingCol) {
+        inBetween = (pieceRow < kingRow)
+                        ? seekD[pieceIdx] & seekU[kingIdx] & allPieces
+                        : seekD[kingIdx] & seekU[pieceIdx] & allPieces;
+        if (isSingleBit(inBetween) && inBetween & allMyPieces)
+          mine.pinType[index(inBetween)] = 3;
+      }
+      temp ^= piece;
+    }
+
+    temp = (opponents.bishops | opponents.queens) & bishopMasks[kingIdx];
+
+    while (temp) {
+      piece = LSBIT(temp);
+      pieceIdx = index(piece);
+      pieceRow = pieceIdx / 8;
+      pieceCol = pieceIdx % 8;
+
+      if (kingRow - pieceRow == pieceCol - kingCol) {
+        inBetween = (pieceRow < kingRow)
+                        ? seekDL[pieceIdx] & seekUR[kingIdx] & allPieces
+                        : seekDL[kingIdx] & seekUR[pieceIdx] & allPieces;
+        if (isSingleBit(inBetween) && inBetween & allMyPieces)
+          mine.pinType[index(inBetween)] = 2;
+      } else if (kingRow - pieceRow == kingCol - pieceCol) {
+        inBetween = (pieceRow < kingRow)
+                        ? seekDR[pieceIdx] & seekUL[kingIdx] & allPieces
+                        : seekDR[kingIdx] & seekUL[pieceIdx] & allPieces;
+        if (isSingleBit(inBetween) && inBetween & allMyPieces)
+          mine.pinType[index(inBetween)] = 4;
+      }
+      temp ^= piece;
+    }
   }
 };
 

@@ -17,5 +17,6 @@ typedef int64_t I64;
 #define col(location) (63 - U64_clz(location)) % 8
 #define index(location) (63 - U64_clz(location))
 #define LSBIT(x) ((x) & -(x))
+#define isSingleBit(x) (x && (x == LSBIT(x)))
 
 #endif
