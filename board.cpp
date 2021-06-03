@@ -84,6 +84,19 @@ class Board {
     return res;
   };
 
+  void clear_board(){
+    whitePieces = {0, 0,
+                   0, 0,
+                   0, 0};
+    blackPieces = {0, 0,
+                   0, 0,
+                   0, 0};
+    std::fill(std::begin(whitePieces.pinType), std::end(whitePieces.pinType),
+              0);
+    std::fill(std::begin(blackPieces.pinType), std::end(blackPieces.pinType),
+              0);
+  }
+
   U64 getAllPieces(bool white) {
     return (white)
                ? (whitePieces.pawns | whitePieces.rooks | whitePieces.knights |
@@ -223,6 +236,14 @@ class Board {
 
 int main() {
   Board board;
+  board.clear_board();
+  board.blackPieces.rooks = 1 << 16;
+  board.whitePieces.rooks = 1 << 24;
+  board.whitePieces.king = (U64)1 << 32;
+  board.calculatePins();
+  
+  // printMask(board.blackPieces.rooks & board.whitePieces.rooks & board.whitePieces.king);
   std::cout << std::string(board) << std::endl;
+
   return 0;
 }
