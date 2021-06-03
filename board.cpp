@@ -230,8 +230,8 @@ class Board {
       Pieces player = white ? whitePieces : blackPieces;
       int pin = player.pinType[index(location)];
       U64 all = getAllPieces(true)|getAllPieces(false);
-      if(isPieceAttacked(player.king)){
-        std::cout << "check lol"
+      if(isPieceAttacked(player.king, white)){
+        std::cout << "check lol";
       }
       else if (location & player.knights){
         return pin != 0 ? 0 : knightMasks[index(location)];
@@ -258,7 +258,7 @@ class Board {
             return 0;
         }
          U64 mask = 0;
-         // going right
+
          U64 right_block =  LSBIT(seekR[index(location)] & all);
          U64 up_block = (U64)1 << 64 - U64_clz(seekU[index(location)] & all);
          U64 left_block = (U64)1 << 64 - U64_clz(seekL[index(location)] & all);
