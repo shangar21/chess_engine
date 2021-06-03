@@ -10,22 +10,6 @@
 #include "testing.h"
 #include "types.h"
 
-enum PieceType { NONE, Pawn, Rook, Knight, Bishop, Queen, King };
-
-struct Move {
-  U8 prev, next;
-};
-
-struct Pieces {
-  U64 pawns;
-  U64 rooks;
-  U64 knights;
-  U64 bishops;
-  U64 queens;
-  U64 king;
-  U8 pinType[64];
-};
-
 class Board {
  public:
   Pieces whitePieces;
@@ -240,7 +224,9 @@ int main() {
   board.blackPieces.rooks = 1 << 16;
   board.whitePieces.rooks = 1 << 24;
   board.whitePieces.king = (U64)1 << 32;
-  board.calculatePins();
+  board.calculatePins(true);
+
+  printPinTypes(board.whitePieces.pinType);
   
   // printMask(board.blackPieces.rooks & board.whitePieces.rooks & board.whitePieces.king);
   std::cout << std::string(board) << std::endl;

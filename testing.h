@@ -20,10 +20,17 @@ void printMask(U64 mask) {
   std::cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << std::endl;
 }
 
-void print_binary(U64 num) {
+void printBinary(U64 num) {
     std::cout << "binary repr: " << std::bitset<8 * sizeof(num)>(num) << std::endl;
 }
 
-
+void printPinTypes(U8 *p) {
+  for (int row=0; row<8; ++row) {
+    for (int col=0; col<8; ++col) {
+      std::cout << '|' << (int)p[row * 8 + col];
+    }
+    std::cout << '|' << std::endl;
+  }
+}
 
 #endif
