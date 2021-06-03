@@ -10,6 +10,12 @@
 #include "testing.h"
 #include "types.h"
 
+// Pintype:
+// 1 -
+// 2 /
+// 3 |
+// 4 \
+
 class Board {
  public:
   Pieces whitePieces;
@@ -23,6 +29,7 @@ class Board {
     blackPieces = {0x000000000000FF00U, 0x0000000000000081U,
                    0x0000000000000042U, 0x0000000000000024U,
                    0x0000000000000008U, 0x0000000000000010U};
+
     std::fill(std::begin(whitePieces.pinType), std::end(whitePieces.pinType),
               0);
     std::fill(std::begin(blackPieces.pinType), std::end(blackPieces.pinType),
@@ -216,6 +223,57 @@ class Board {
       temp ^= piece;
     }
   }
+
+
+  U64 getMoveMask(bool white, U64 location){
+
+      Pieces player = white ? whitePieces : blackPieces;
+      int pin = player.pinType[index(location)];
+      U64 all = getAllPieces(true)|getAllPieces(false);
+      if(isPieceAttacked(player.king)){
+        std::cout << "check lol"
+      }
+      else if (location & player.knights){
+        return pin != 0 ? 0 : knightMasks[index(location)];
+      }
+      else if (location & player.rooks){
+        if (pin != 0){
+            if (pin == 1){
+                if (col(player.king) < col(location)){
+                    return 1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
+                }
+                else{
+                    return LSBIT(seekR[index(location)] & getAllPieces(!white));
+                }
+            }
+            else if (pin == 3){
+                if (row(player.king) < row(location)){
+                    return 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
+                }
+                else{
+                    return LSBIT(seekD[index(location)] & getAllPieces(!white));
+                }
+
+            }
+            return 0;
+        }
+         U64 mask = 0;
+         // going right
+         U64 right_block =  LSBIT(seekR[index(location)] & all);
+         U64 up_block = (U64)1 << 64 - U64_clz(seekU[index(location)] & all);
+         U64 left_block = (U64)1 << 64 - U64_clz(seekL[index(location)] & all);
+         U64 down_block =  LSBIT(seekD[index(location)] & all);
+         
+         mask |= right_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(right_block)] : (seekR[index(location)] ^ seekR[index(right_block)]) ^ right_block;
+         mask |= up_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(up_block)] : (seekR[index(location)] ^ seekR[index(up_block)]) ^ up_block; 
+         mask |= left_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(left_block)] : (seekR[index(location)] ^ seekR[index(left_block)]) ^ left_block;  
+         mask |= down_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(down_block)] : (seekR[index(location)] ^ seekR[index(down_block)]) ^ down_block; 
+         
+         return mask;
+         
+      }
+          
+  } 
 };
 
 int main() {
