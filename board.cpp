@@ -230,50 +230,53 @@ class Board {
       Pieces player = white ? whitePieces : blackPieces;
       int pin = player.pinType[index(location)];
       U64 all = getAllPieces(true)|getAllPieces(false);
+      U64 mask = 0;
       if(isPieceAttacked(player.king, white)){
         std::cout << "check lol";
       }
       else if (location & player.knights){
-        return pin != 0 ? 0 : knightMasks[index(location)];
+        return pin != 0 ? 0 : knightMasks[index(location)] ^ allPieces(white);
       }
       else if (location & player.rooks){
         if (pin != 0){
             if (pin == 1){
-                if (col(player.king) < col(location)){
-                    return 1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
+                if (col(player.king) > col(location)){
+                    mask |= 1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
                 }
                 else{
-                    return LSBIT(seekR[index(location)] & getAllPieces(!white));
+                    mask |= LSBIT(seekR[index(location)] & getAllPieces(!white));
                 }
             }
             else if (pin == 3){
                 if (row(player.king) < row(location)){
-                    return 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
+                    mask |= 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
                 }
                 else{
-                    return LSBIT(seekD[index(location)] & getAllPieces(!white));
+                    mask |= LSBIT(seekD[index(location)] & getAllPieces(!white));
                 }
 
+            }else{
+                return 0;
             }
-            return 0;
-        }
-         U64 mask = 0;
 
+        }
          U64 right_block =  LSBIT(seekR[index(location)] & all);
          U64 up_block = (U64)1 << 64 - U64_clz(seekU[index(location)] & all);
          U64 left_block = (U64)1 << 64 - U64_clz(seekL[index(location)] & all);
          U64 down_block =  LSBIT(seekD[index(location)] & all);
          
          mask |= right_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(right_block)] : (seekR[index(location)] ^ seekR[index(right_block)]) ^ right_block;
-         mask |= up_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(up_block)] : (seekR[index(location)] ^ seekR[index(up_block)]) ^ up_block; 
-         mask |= left_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(left_block)] : (seekR[index(location)] ^ seekR[index(left_block)]) ^ left_block;  
-         mask |= down_block & getAllPieces(!white) ? seekR[index(location)] ^ seekR[index(down_block)] : (seekR[index(location)] ^ seekR[index(down_block)]) ^ down_block; 
+         mask |= up_block & getAllPieces(!white) ? seekU[index(location)] ^ seekU[index(up_block)] : (seekU[index(location)] ^ seekU[index(up_block)]) ^ up_block; 
+         mask |= left_block & getAllPieces(!white) ? seekL[index(location)] ^ seekL[index(left_block)] : (seekL[index(location)] ^ seekL[index(left_block)]) ^ left_block;  
+         mask |= down_block & getAllPieces(!white) ? seekD[index(location)] ^ seekD[index(down_block)] : (seekD[index(location)] ^ seekD[index(down_block)]) ^ down_block; 
          
          return mask;
          
       }
+      else if(location & player.bishops){
+
           
-  } 
+      } 
 };
 
 int main() {
