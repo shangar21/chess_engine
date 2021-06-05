@@ -230,7 +230,7 @@ class Board {
       Pieces player = white ? whitePieces : blackPieces;
       int pin = player.pinType[index(location)];
       U64 all = getAllPieces(true)|getAllPieces(false);
-      U64 mask = 0;
+
       if(isPieceAttacked(player.king, white)){
         std::cout << "check lol";
       }
@@ -241,25 +241,33 @@ class Board {
         if (pin != 0){
             if (pin == 1){
                 if (col(player.king) > col(location)){
-                    mask |= 1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
+                  // king is on the right
+                    U64 opp =  1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
+                    return (seekL[index(location)] & seekR[index(opp)]) | opp | (seekR[index(location)] & seekL[index(king)]); 
                 }
                 else{
-                    mask |= LSBIT(seekR[index(location)] & getAllPieces(!white));
+                  //king is on the left
+                    U64 opp = |= LSBIT(seekR[index(location)] & getAllPieces(!white));
+                    return (seekR[index(location)] & seekL[index(opp)]) | opp | (seekL[index(location)] & seekR[index(king)]); 
                 }
             }
             else if (pin == 3){
-                if (row(player.king) < row(location)){
-                    mask |= 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
+                if (row(player.king) > row(location)){
+                    // king is below location
+                    U64 opp = 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
+                    return (seekU[index(location)] & seekD[index(opp)]) | opp | (seekD[index(location)] & seekU[index(king)]); 
                 }
                 else{
-                    mask |= LSBIT(seekD[index(location)] & getAllPieces(!white));
+                    // king is above location
+                    U64 opp = LSBIT(seekD[index(location)] & getAllPieces(!white));
+                    return (seekD[index(location)] & seekU[index(opp)]) | opp | (seekU[index(location)] & seekD[index(king)]); 
                 }
 
-            }else{
-                return 0;
             }
-
+            return 0;
         }
+
+         U64 mask = 0;
          U64 right_block =  LSBIT(seekR[index(location)] & all);
          U64 up_block = (U64)1 << 64 - U64_clz(seekU[index(location)] & all);
          U64 left_block = (U64)1 << 64 - U64_clz(seekL[index(location)] & all);
@@ -274,9 +282,34 @@ class Board {
          
       }
       else if(location & player.bishops){
+        if (pin != 0){
+          if (pin == 2){
+            if (col(player.king) > col(location)){
+              //king is up-right from location
+              U64 opp = LSBIT(seekDL[index(location)] & getAllPieces(!white));
+              return (seekDL[index(location)] & seekUR[index(opp)]) | opp | (seekUR[index(location)] & seekDL[index(king)]);
+            }else{
+              //king is down-left from location
+              U64 opp = (U64)1 << (64 - U64_clz((seekUR[index(location)]) & getAllPieces(!white)));
+              return (seekUR[index(location)] & seekDL[index(opp)]) | opp | (seekDL[index(location)] & seekUR[index(king)]);
+            }
+          }
+          else if (pin == 4){
+            if (col(player.king) < col(location)){
+              // king is up-left from location
+              U64 opp = LSBIT(seekDR[index(location)] & getAllPieces(!white));
+              return (seekDR[index(location)] & seekUL[index(opp)]) | opp | (seekUL[index(location)] & seekDR[index(king)]);
+            }
+            else{
+              // king is down-right from location
+              U64 opp = (U64)1 << (64 - U64_clz(seekUL[index(location)] & getAllPieces(!white)));
+              return (seekUL[index(location)] & seekDR[index(opp)]) | opp | (seekDR[index(location)] & seekUL[index(king)]);
+            }
+          }          
+        }
 
-          
-      } 
+        // add the UR, DL, UL, DR blocks and calculate similar to rook 
+      }
 };
 
 int main() {
