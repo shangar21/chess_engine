@@ -233,7 +233,7 @@ class Board {
             if (pin == 1){
                 if (col(player.king) > col(location)){
                   // king is on the right
-                    U64 opp =  1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
+                    U64 opp =  (U64)1 << (64 - U64_clz(seekL[index(location)] & getAllPieces(!white)));
                     return (seekL[index(location)] & seekR[index(opp)]) | opp | (seekR[index(location)] & seekL[index(player.king)]); 
                 }
                 else{
@@ -245,7 +245,7 @@ class Board {
             else if (pin == 3){
                 if (row(player.king) > row(location)){
                     // king is below location
-                    U64 opp = 1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
+                    U64 opp = (U64)1 << (64 - U64_clz(seekU[index(location)] & getAllPieces(!white)));
                     return (seekU[index(location)] & seekD[index(opp)]) | opp | (seekD[index(location)] & seekU[index(player.king)]); 
                 }
                 else{
@@ -332,9 +332,55 @@ class Board {
     return getRookMoveMask(white, location) | getBishopMoveMask(white, location);
   }
 
+  U64 getKingMoveMask(bool white, U64 location){
+    U64 mask = 0;
+     mask |= isPieceAttacked(location << 8, white) ? 0 : location << 8;
+     mask |= isPieceAttacked(location >> 8, white) ? 0 : location >> 8;
+     mask |= isPieceAttacked(location << 7, white) ? 0 : location << 7;
+     mask |= isPieceAttacked(location >> 7, white) ? 0 : location >> 7;
+     mask |= isPieceAttacked(location << 9, white) ? 0 : location << 9;
+     mask |= isPieceAttacked(location >> 9, white) ? 0 : location >> 9;
+     mask |= isPieceAttacked(location << 1, white) ? 0 : location << 1;
+     mask |= isPieceAttacked(location >> 1, white) ? 0 : location >> 1;
+    return mask ^ getAllPieces(white);
+  }
 
-  void move(bool white, U64 to, U64 from){
+  bool isMultCheck(bool white){
     Pieces player = white ? whitePieces : blackPieces;
+    Pieces opponent = white ? blackPieces : whitePieces;
+
+    if(!isPieceAttacked(player.king, white)){
+      return false;
+    }
+
+    U64 attackingPieces = queenMasks[index(player.king)] & getAllPieces(!white);
+
+    U64 blockingPieces_up = MSBIT(seekU[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_down = LSBIT(seekD[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_left = MSBIT(seekL[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_right = LSBIT(seekR[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_up_right = MSBIT(seekUR[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_up_left = MSBIT(seekUL[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_down_right = LSBIT(seekDR[index(player.king)] & getAllPieces(white));
+    U64 blockingPieces_down_left = LSBIT(seekDL[index(player.king)] & getAllPieces(white));
+
+    attackingPieces ^= blockingPieces_up ? seekU[index(blockingPieces_up)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_down ? seekU[index(blockingPieces_down)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_left ? seekU[index(blockingPieces_left)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_right ? seekU[index(blockingPieces_right)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_up_right ? seekU[index(blockingPieces_up_right)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_up_left ? seekU[index(blockingPieces_up_left)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_down_right ? seekU[index(blockingPieces_down_right)] & getAllPieces(white) : 0;
+    attackingPieces ^= blockingPieces_down_left ? seekU[index(blockingPieces_down_left)] & getAllPieces(white) : 0;
+
+    return isSingleBit(attackingPieces);
+
+  }
+
+  void moveSliding(bool white, U64 to, U64 from)
+  {
+    Pieces player = white ? whitePieces : blackPieces;
+    Pieces opponent = white ? blackPieces : whitePieces;
     U64 mask = 0;
 
     if (from & player.knights){
@@ -342,8 +388,6 @@ class Board {
       if (mask & to){
         player.knights ^= from;
         player.knights |= to; 
-      }else{
-        std::cout << "invalid move ya mook";
       }
     }
     else if (from & player.rooks){
@@ -351,8 +395,6 @@ class Board {
       if (mask & to){
         player.rooks ^= from;
         player.rooks |= to;
-      }else{
-        std::cout << "invalid move ya mook";
       }
     }
     else if (from & player.bishops){
@@ -360,8 +402,6 @@ class Board {
       if (mask & to){
         player.bishops ^= from;
         player.bishops |= to;
-      }else{
-        std::cout << "invalid move ya mook";
       }
     }
     else if (from & player.queens){
@@ -369,10 +409,51 @@ class Board {
       if (mask & to){
         player.queens ^= from;
         player.queens |= to;
+      }
+    }
+    else if (from & player.king){
+      mask = getKingMoveMask(white, from);
+      if (mask & to){
+        player.king ^= from;
+        player.king |= to;
+      }
+    }
+  }
+
+  void move(bool white, U64 to, U64 from){
+    Pieces player = white ? whitePieces : blackPieces;
+    Pieces opponent = white ? blackPieces : whitePieces;
+    U64 mask = 0;
+    U64 currentPlay = getAllPieces(white);
+
+    if (isPieceAttacked(player.king, white)){
+      if (getKingMoveMask(white, from)){
+        if(isMultCheck(white)){
+          mask = getKingMoveMask(white, from);
+          if((mask & to )&& (from & player.king)){
+            player.king ^= from;
+            player.king |= to;
+          }else{
+            std::cout << "invalid move ya mook";
+          }
+        }else{
+          moveSliding(white, to, from);
+          if (isPieceAttacked(player.king, white)){
+            moveSliding(white, from, to);
+            std::cout << "invalid move ya mook";
+          }
+        }        
       }else{
+        std::cout << "checkmate";
+      }
+    }else{
+      moveSliding(white, to, from);
+      if(getAllPieces(white) == currentPlay){
         std::cout << "invalid move ya mook";
       }
     }
+
+
   }
 };
 
